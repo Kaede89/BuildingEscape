@@ -84,3 +84,6 @@ VSCode Files
 /.vscode/*
 BuildingEscape.code-workspace
 
+# MarketPlace ScientLab
+Content/ScienceLab/*
+
