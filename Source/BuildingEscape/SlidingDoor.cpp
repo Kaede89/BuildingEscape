@@ -4,6 +4,9 @@
 #include "SlidingDoor.h"
 #include "GameFramework/Actor.h"
 #include "TimerManager.h"
+#include "Engine/StaticMeshActor.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 
 // Sets default values for this component's properties
 USlidingDoor::USlidingDoor()
@@ -20,9 +23,22 @@ USlidingDoor::USlidingDoor()
 void USlidingDoor::BeginPlay()
 {
 	Super::BeginPlay();
-	AActor* Owner = GetOwner();
-	StartLocation = Owner->GetActorLocation();
+	StartLocation = GetOwner()->GetActorLocation();
 	TargetLocation.Y = bIsOpen ? StartLocation.Y + 105 : StartLocation.Y - 105;
+
+	FVector origin;
+ 	FVector boxExtent;
+	GetOwner()->GetActorBounds(false, origin, boxExtent, false);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Origin are: %f, %f, %f"), origin.X, origin.Y, origin.Z);
+	UE_LOG(LogTemp, Warning, TEXT("boxExtent are: %f, %f, %f"), boxExtent.X, boxExtent.Y, boxExtent.Z);
+	
+	AStaticMeshActor* Owner = Cast<AStaticMeshActor> (GetOwner());
+	UStaticMeshComponent* staticMeshComponent = Owner->GetStaticMeshComponent();
+	UStaticMesh* StaticMesh = staticMeshComponent->GetStaticMesh();
+	FVector bounds = StaticMesh->GetBounds().BoxExtent;
+
+	UE_LOG(LogTemp, Warning, TEXT("bounds are: %f, %f, %f"), bounds.X, bounds.Y, bounds.Z);
 	// ...
 }
 
@@ -43,6 +59,8 @@ void USlidingDoor::RecalculateTargetPosition()
 	UE_LOG(LogTemp, Error, TEXT("timer expired: is open? %s"), bIsOpen ? TEXT("true") : TEXT("false"));
 	FVector Location = GetOwner()->GetActorLocation();
 	TargetLocation.Y = bIsOpen ? Location.Y + 105 : Location.Y - 105;
+	
+
 }
 
 void USlidingDoor::SlideDoor(float& DeltaTime)
