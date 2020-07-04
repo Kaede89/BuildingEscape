@@ -6,10 +6,6 @@
 #include "Components/ActorComponent.h"
 #include "GameFramework/Actor.h"
 #include "Engine/TriggerVolume.h"
-#include "TimerManager.h"
-#include "Engine/StaticMeshActor.h"
-#include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "SlidingDoor.generated.h"
@@ -42,10 +38,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	AActor* ActorThatOpen;
 	
-	FVector TargetLocation;
-	FVector StartLocation;
-	FVector boxExtent;
+	FVector OpenLocation;
+	FVector CloseLocation;
 	
-	void SlideDoor(float& DeltaTime);
-	void RecalculateTargetPosition();
+	
+	void SlideDoor(float& DeltaTime, bool bIsDoorOpening);
 };

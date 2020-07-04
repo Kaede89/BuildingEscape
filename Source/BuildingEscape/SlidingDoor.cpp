@@ -20,18 +20,25 @@ USlidingDoor::USlidingDoor()
 void USlidingDoor::BeginPlay()
 {
 	Super::BeginPlay();
-	FVector origin;
+	FVector origin, boxExtent;
 
-	StartLocation = GetOwner()->GetActorLocation();
 	GetOwner()->GetActorBounds(false, origin, boxExtent, false);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Origin are: %f, %f, %f"), origin.X, origin.Y, origin.Z);
 	UE_LOG(LogTemp, Warning, TEXT("boxExtent are: %f, %f, %f"), boxExtent.X, boxExtent.Y, boxExtent.Z);
-	TargetLocation.X = StartLocation.X;
-	TargetLocation.Y = bIsOpen ? StartLocation.Y + boxExtent.Y * 2 : StartLocation.Y - boxExtent.Y * 2;
-	// ...
+
+	if (bIsOpen) {
+		OpenLocation = origin;
+		CloseLocation = OpenLocation;
+		CloseLocation.Y = OpenLocation.Y + boxExtent.Y * 2;
+	} else {
+		CloseLocation = origin;
+		OpenLocation = CloseLocation;
+		OpenLocation.Y = CloseLocation.Y - boxExtent.Y * 2;
+	}
 
 	ActorThatOpen = GetWorld()->GetFirstPlayerController()->GetPawn();
+	// ...
 }
 
 
@@ -40,32 +47,20 @@ void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	FVector Location = GetOwner()->GetActorLocation();
-	if (DoorPressurePlate && Location.Y != TargetLocation.Y && DoorPressurePlate->IsOverlappingActor(ActorThatOpen)) {
-		SlideDoor(DeltaTime);
+	if (DoorPressurePlate && Location.Y != OpenLocation.Y && DoorPressurePlate->IsOverlappingActor(ActorThatOpen)) {
+		SlideDoor(DeltaTime, true);
+	} else if (Location.Y != CloseLocation.Y) {
+		SlideDoor(DeltaTime, false);
 	}
 	// ...
 }
 
-void USlidingDoor::RecalculateTargetPosition()
-{
-	UE_LOG(LogTemp, Error, TEXT("timer expired: is open? %s"), bIsOpen ? TEXT("true") : TEXT("false"));
-	FVector Location = GetOwner()->GetActorLocation();
-	TargetLocation.Y = bIsOpen ? Location.Y + boxExtent.Y * 2 : Location.Y - boxExtent.Y * 2;
-}
-
-void USlidingDoor::SlideDoor(float& DeltaTime)
+void USlidingDoor::SlideDoor(float& DeltaTime, bool bIsDoorOpening)
 {
 	FVector Location = GetOwner()->GetActorLocation();
+	FVector TargetLocation = bIsDoorOpening ? OpenLocation : CloseLocation;
 	float InterpolatedY = FMath::FInterpConstantTo(Location.Y, TargetLocation.Y, DeltaTime,  45);
-	FVector Transition = Location;
-	Transition.Y = InterpolatedY;
-	GetOwner()->SetActorLocation(Transition);
-	UE_LOG(LogTemp, Warning, TEXT("actor Y is: %f"), Transition.Y);
-	if (Transition.Y == TargetLocation.Y) {
-		bIsOpen = !bIsOpen;
-		FTimerHandle UnusedHandle;
-		UE_LOG(LogTemp, Error, TEXT("Setting up timer!"));
-		GetOwner()->GetWorldTimerManager().SetTimer(UnusedHandle, this, &USlidingDoor::RecalculateTargetPosition, 2.0f, false, 2.0f);
-	}
+	Location.Y = InterpolatedY;
+	GetOwner()->SetActorLocation(Location);
+	UE_LOG(LogTemp, Warning, TEXT("actor Y is: %f"), Location.Y);
 }
-
