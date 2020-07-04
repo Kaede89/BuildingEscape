@@ -30,6 +30,7 @@ private:
 	
 	FVector TargetLocation;
 	FVector StartLocation;
+	FVector boxExtent;
 	
 	void SlideDoor(float& DeltaTime);
 	void RecalculateTargetPosition();
