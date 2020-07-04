@@ -38,9 +38,16 @@ private:
 	UPROPERTY(EditAnywhere)
 	AActor* ActorThatOpen;
 	
+	UPROPERTY(EditAnywhere)
+	float DoorCloseDelay = 1.f;
+
+	UPROPERTY(EditAnywhere)
+	float DoorSlideSpeed = 85.f;
+	
+	float DoorLastOpened = 0.f;
+	
 	FVector OpenLocation;
 	FVector CloseLocation;
-	
-	
+
 	void SlideDoor(float& DeltaTime, bool bIsDoorOpening);
 };

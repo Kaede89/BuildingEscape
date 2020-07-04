@@ -47,10 +47,25 @@ void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	FVector Location = GetOwner()->GetActorLocation();
-	if (DoorPressurePlate && Location.Y != OpenLocation.Y && DoorPressurePlate->IsOverlappingActor(ActorThatOpen)) {
-		SlideDoor(DeltaTime, true);
-	} else if (Location.Y != CloseLocation.Y) {
-		SlideDoor(DeltaTime, false);
+	if (DoorPressurePlate && DoorPressurePlate->IsOverlappingActor(ActorThatOpen))
+	{
+		if (Location.Y != OpenLocation.Y)
+		{
+			SlideDoor(DeltaTime, true);
+		}
+
+		if (GetOwner()->GetActorLocation().Y == OpenLocation.Y)
+		{
+			DoorLastOpened = GetWorld()->GetTimeSeconds();
+			UE_LOG(LogTemp, Warning, TEXT("Last opened at: %f"), DoorLastOpened);
+		}
+	}
+	else if (Location.Y != CloseLocation.Y)
+	{
+		if (GetWorld()->GetTimeSeconds() - DoorLastOpened > DoorCloseDelay)
+		{
+			SlideDoor(DeltaTime, false);
+		}
 	}
 	// ...
 }
@@ -59,8 +74,8 @@ void USlidingDoor::SlideDoor(float& DeltaTime, bool bIsDoorOpening)
 {
 	FVector Location = GetOwner()->GetActorLocation();
 	FVector TargetLocation = bIsDoorOpening ? OpenLocation : CloseLocation;
-	float InterpolatedY = FMath::FInterpConstantTo(Location.Y, TargetLocation.Y, DeltaTime,  45);
+	float InterpolatedY = FMath::FInterpConstantTo(Location.Y, TargetLocation.Y, DeltaTime,  DoorSlideSpeed);
 	Location.Y = InterpolatedY;
 	GetOwner()->SetActorLocation(Location);
-	UE_LOG(LogTemp, Warning, TEXT("actor Y is: %f"), Location.Y);
+	//UE_LOG(LogTemp, Warning, TEXT("actor Y is: %f"), Location.Y);
 }
