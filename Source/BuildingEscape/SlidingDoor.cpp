@@ -30,6 +30,8 @@ void USlidingDoor::BeginPlay()
 	TargetLocation.X = StartLocation.X;
 	TargetLocation.Y = bIsOpen ? StartLocation.Y + boxExtent.Y * 2 : StartLocation.Y - boxExtent.Y * 2;
 	// ...
+
+	ActorThatOpen = GetWorld()->GetFirstPlayerController()->GetPawn();
 }
 
 
