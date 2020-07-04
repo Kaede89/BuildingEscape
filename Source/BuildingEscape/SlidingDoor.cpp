@@ -2,11 +2,8 @@
 
 
 #include "SlidingDoor.h"
-#include "GameFramework/Actor.h"
-#include "TimerManager.h"
-#include "Engine/StaticMeshActor.h"
-#include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
+
+
 
 // Sets default values for this component's properties
 USlidingDoor::USlidingDoor()
@@ -24,7 +21,7 @@ void USlidingDoor::BeginPlay()
 {
 	Super::BeginPlay();
 	FVector origin;
-	
+
 	StartLocation = GetOwner()->GetActorLocation();
 	GetOwner()->GetActorBounds(false, origin, boxExtent, false);
 	
@@ -41,7 +38,7 @@ void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	FVector Location = GetOwner()->GetActorLocation();
-	if (Location.Y != TargetLocation.Y) {
+	if (DoorPressurePlate && Location.Y != TargetLocation.Y && DoorPressurePlate->IsOverlappingActor(ActorThatOpen)) {
 		SlideDoor(DeltaTime);
 	}
 	// ...
