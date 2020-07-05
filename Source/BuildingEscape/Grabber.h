@@ -37,4 +37,5 @@ private:
 	UInputComponent* InputController = nullptr;
 
 	void Grab();
+	void Release();
 };

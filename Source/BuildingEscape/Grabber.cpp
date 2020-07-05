@@ -41,11 +41,24 @@ void UGrabber::BeginPlay()
 		this,
 		&UGrabber::Grab
 	);
+
+	InputController->BindAction
+	(
+		TEXT("Grab"),
+		EInputEvent::IE_Released,
+		this,
+		&UGrabber::Release
+	);
 }
 
 void UGrabber::Grab()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Key pressed!"));
+	UE_LOG(LogTemp, Warning, TEXT("Grabbed!"));
+}
+
+void UGrabber::Release()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Released!"));
 }
 
 
