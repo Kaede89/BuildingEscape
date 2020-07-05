@@ -24,11 +24,28 @@ void UGrabber::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Grabber reporting for duty!"));
 
 	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
-	if (!PhysicsHandle) {
+	InputController = GetOwner()->FindComponentByClass<UInputComponent>();
+	if (InputController)
+	{
+		UE_LOG(LogTemp, Error, TEXT("fond input controller for: %s"), *GetOwner()->GetName());
+	}
+	if (!PhysicsHandle)
+	{
 		UE_LOG(LogTemp, Error, TEXT("no physics handle component found attached to: %s"), *GetOwner()->GetName());
 	}
 	// ...
-	
+	InputController->BindAction
+	(
+		TEXT("Grab"),
+		EInputEvent::IE_Pressed,
+		this,
+		&UGrabber::Grab
+	);
+}
+
+void UGrabber::Grab()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Key pressed!"));
 }
 
 
