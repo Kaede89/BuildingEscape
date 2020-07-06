@@ -57,14 +57,22 @@ void UGrabber::SetupInputComponent()
 
 void UGrabber::Grab()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Grabbed!"));
+	FHitResult Hit = GetFirstPhysicsBodyInReach();
 
-	GetFirstPhysicsBodyInReach();
+	UPrimitiveComponent* ComponentToGrab = Hit.GetComponent();
+
+	if (Hit.GetActor())
+	{
+		PhysicsHandle->GrabComponentAtLocation(ComponentToGrab, NAME_None, GetPlayerReach());
+	}
 }
 
 void UGrabber::Release()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Released!"));
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		PhysicsHandle->ReleaseComponent();
+	}
 }
 
 
@@ -72,34 +80,46 @@ void UGrabber::Release()
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		PhysicsHandle->SetTargetLocation(GetPlayerReach());
+	}
 }
 
 FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
 {
-	FVector PlayerViewLocation;
-	FRotator PlayerViewRotation;
-
-	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(PlayerViewLocation, PlayerViewRotation);
-	// ...
-
-	FVector LineTraceEnd = PlayerViewLocation + PlayerViewRotation.Vector() * Reach;
-		
 	FHitResult Hit;
 	FCollisionQueryParams TraceParams(FName(TEXT("")), false, GetOwner());
 
 	GetWorld()->LineTraceSingleByObjectType(
 		OUT Hit,
-		PlayerViewLocation,
-		LineTraceEnd,
+		GetPlayerLocation(),
+		GetPlayerReach(),
 		FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
 		TraceParams
 	);
 
-	if (Hit.GetActor())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("hitted: %s"), *Hit.GetActor()->GetName());
-	}
-
 	return Hit;
+}
+
+FVector UGrabber::GetPlayerReach() const
+{
+	FVector PlayerViewLocation;
+	FRotator PlayerViewRotation;
+
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(PlayerViewLocation, PlayerViewRotation);
+	
+	return PlayerViewLocation + PlayerViewRotation.Vector() * Reach;
+}
+
+FVector UGrabber::GetPlayerLocation() const
+{
+	FVector PlayerViewLocation;
+	FRotator PlayerViewRotation;
+
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(PlayerViewLocation, PlayerViewRotation);
+
+	return PlayerViewLocation;
 }
 
