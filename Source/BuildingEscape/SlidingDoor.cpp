@@ -11,7 +11,6 @@ USlidingDoor::USlidingDoor()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 	// ...
 }
 
@@ -20,6 +19,9 @@ USlidingDoor::USlidingDoor()
 void USlidingDoor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GetOwner()->FindComponentByClass<UBoxComponent>()->OnComponentBeginOverlap.AddDynamic(this, &USlidingDoor::OnOverlapBegin);
+	GetOwner()->FindComponentByClass<UBoxComponent>()->OnComponentEndOverlap.AddDynamic(this, &USlidingDoor::onOverlapEnd);
 
 	if(!DoorPressurePlate)
 	{
@@ -161,4 +163,20 @@ void USlidingDoor::ResetAudio()
 {
 	bOpenDoorSound = false;
 	bCloseDoorSound = false;
+}
+
+void USlidingDoor::OnOverlapBegin(class UPrimitiveComponent* OverlapComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("overlapped!"));
+	if (AudioComponentsMap.Contains(TEXT("AccessDeniedAudio")) && !bAccessDeniedSound)
+	{
+		AudioComponentsMap[TEXT("AccessDeniedAudio")]->Play();
+		bAccessDeniedSound = true;
+	}
+}
+
+void USlidingDoor::onOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	UE_LOG(LogTemp, Warning, TEXT("overlap ended!"));
+	bAccessDeniedSound = false;
 }
