@@ -35,10 +35,10 @@ private:
 	bool bIsOpen = false;
 
 	UPROPERTY(EditAnywhere)
-	ATriggerVolume* DoorPressurePlate;
+	ATriggerVolume* DoorPressurePlate = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	AActor* ActorThatOpen;
+	AActor* ActorThatOpen = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	float DoorCloseDelay = 1.f;

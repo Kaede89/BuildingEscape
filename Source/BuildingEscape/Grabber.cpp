@@ -69,6 +69,11 @@ void UGrabber::Grab()
 
 void UGrabber::Release()
 {
+	if (!PhysicsHandle)
+	{
+		return;
+	}
+
 	if (PhysicsHandle->GrabbedComponent)
 	{
 		PhysicsHandle->ReleaseComponent();
@@ -80,6 +85,11 @@ void UGrabber::Release()
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (!PhysicsHandle)
+	{
+		return;
+	}
 
 	if (PhysicsHandle->GrabbedComponent)
 	{
@@ -109,7 +119,7 @@ FVector UGrabber::GetPlayerReach() const
 	FRotator PlayerViewRotation;
 
 	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(PlayerViewLocation, PlayerViewRotation);
-	
+
 	return PlayerViewLocation + PlayerViewRotation.Vector() * Reach;
 }
 

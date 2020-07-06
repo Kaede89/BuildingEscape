@@ -20,6 +20,12 @@ USlidingDoor::USlidingDoor()
 void USlidingDoor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(!DoorPressurePlate)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s has the sliding door component, but no pressure plate found"), *GetOwner()->GetName());
+	}
+
 	FVector origin, boxExtent;
 
 	GetOwner()->GetActorBounds(false, origin, boxExtent, false);
