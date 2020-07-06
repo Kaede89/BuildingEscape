@@ -9,6 +9,7 @@
 #include "Engine/TriggerVolume.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/AudioComponent.h"
 #include "SlidingDoor.generated.h"
 
 
@@ -53,6 +54,12 @@ private:
 	
 	FVector OpenLocation;
 	FVector CloseLocation;
+	TMap<FString, UAudioComponent*> AudioComponentsMap;
+	bool bOpenDoorSound = false;
+	bool bCloseDoorSound = false;
 
 	void SlideDoor(float& DeltaTime, bool bIsDoorOpening);
+	void FindAudioComponents();
+	void PlayAudio(bool bIsDoorOpening);
+	void ResetAudio();
 };

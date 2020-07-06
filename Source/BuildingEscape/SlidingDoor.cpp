@@ -44,6 +44,8 @@ void USlidingDoor::BeginPlay()
 	}
 
 	ActorThatOpen = GetWorld()->GetFirstPlayerController()->GetPawn();
+
+	FindAudioComponents();
 	// ...
 }
 
@@ -82,6 +84,11 @@ void USlidingDoor::SlideDoor(float& DeltaTime, bool bIsDoorOpening)
 	float InterpolatedY = FMath::FInterpConstantTo(Location.Y, TargetLocation.Y, DeltaTime,  DoorSlideSpeed);
 	Location.Y = InterpolatedY;
 	GetOwner()->SetActorLocation(Location);
+	PlayAudio(bIsDoorOpening);
+	if (Location.Y == TargetLocation.Y)
+	{
+		ResetAudio();
+	}
 	//UE_LOG(LogTemp, Warning, TEXT("actor Y is: %f"), Location.Y);
 }
 
@@ -105,4 +112,53 @@ float USlidingDoor::TotalMassOfActors() const
 
 	// UE_LOG(LogTemp, Warning, TEXT("total mass is: %f"), TotalMass);
 	return TotalMass;
+}
+
+void USlidingDoor::FindAudioComponents()
+{
+	TArray<UAudioComponent*> AudioComponents;
+	GetOwner()->GetComponents(AudioComponents);
+
+	if (AudioComponents.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Audio component attached to %s"), *GetOwner()->GetName());
+	}
+
+	for (auto Audio : AudioComponents)
+	{
+		AudioComponentsMap.Add(Audio->GetName(), Audio);
+	}
+}
+
+void USlidingDoor::PlayAudio(bool bIsDoorOpening)
+{
+	const FString AudioComponentName = bIsDoorOpening ? TEXT("OpenDoorAudio") : TEXT("CloseDoorAudio");
+
+	if (!AudioComponentsMap.Contains(AudioComponentName))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Audio component attached named %s"), *AudioComponentName);
+		return;
+	}
+
+	const bool SoundToCheck = bIsDoorOpening ? bOpenDoorSound : bCloseDoorSound;
+
+	if (!SoundToCheck)
+	{
+		AudioComponentsMap[AudioComponentName]->Play();
+
+		if (bIsDoorOpening)
+		{
+			bOpenDoorSound = true;
+		}
+		else
+		{
+			bCloseDoorSound = true;
+		}
+	}
+}
+
+void USlidingDoor::ResetAudio()
+{
+	bOpenDoorSound = false;
+	bCloseDoorSound = false;
 }
