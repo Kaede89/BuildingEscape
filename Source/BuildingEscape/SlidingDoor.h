@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/PrimitiveComponent.h"
 #include "Components/ActorComponent.h"
 #include "GameFramework/Actor.h"
 #include "Engine/TriggerVolume.h"
@@ -27,6 +28,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	float TotalMassOfActors() const;
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -43,6 +45,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float DoorSlideSpeed = 85.f;
+
+	UPROPERTY(EditAnywhere)
+	float MassToOpenDoor = 0.f;
 	
 	float DoorLastOpened = 0.f;
 	

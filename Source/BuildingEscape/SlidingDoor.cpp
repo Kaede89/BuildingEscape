@@ -47,7 +47,7 @@ void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	FVector Location = GetOwner()->GetActorLocation();
-	if (DoorPressurePlate && DoorPressurePlate->IsOverlappingActor(ActorThatOpen))
+	if (DoorPressurePlate && TotalMassOfActors() > MassToOpenDoor)
 	{
 		if (Location.Y != OpenLocation.Y)
 		{
@@ -77,4 +77,26 @@ void USlidingDoor::SlideDoor(float& DeltaTime, bool bIsDoorOpening)
 	Location.Y = InterpolatedY;
 	GetOwner()->SetActorLocation(Location);
 	//UE_LOG(LogTemp, Warning, TEXT("actor Y is: %f"), Location.Y);
+}
+
+float USlidingDoor::TotalMassOfActors() const
+{
+
+	TArray<AActor*> OverlappingActors;
+	float TotalMass = 0.f;
+	if (DoorPressurePlate)
+	{
+		DoorPressurePlate->GetOverlappingActors(OverlappingActors);
+
+		for (AActor* Actor : OverlappingActors)
+		{
+			float AMass =  Actor->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+			UE_LOG(LogTemp, Warning, TEXT("mass: %f for %s"), AMass, *Actor->GetName());
+			TotalMass += Actor->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+		}
+
+	}
+
+	// UE_LOG(LogTemp, Warning, TEXT("total mass is: %f"), TotalMass);
+	return TotalMass;
 }
