@@ -57,7 +57,6 @@ void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		if (GetOwner()->GetActorLocation().Y == OpenLocation.Y)
 		{
 			DoorLastOpened = GetWorld()->GetTimeSeconds();
-			UE_LOG(LogTemp, Warning, TEXT("Last opened at: %f"), DoorLastOpened);
 		}
 	}
 	else if (Location.Y != CloseLocation.Y)

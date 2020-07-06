@@ -20,20 +20,24 @@ UGrabber::UGrabber()
 void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	UE_LOG(LogTemp, Warning, TEXT("Grabber reporting for duty!"));
 
+	FindPhysicsHandle();
+	SetupInputComponent();
+}
+
+void UGrabber::FindPhysicsHandle()
+{
 	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
-	InputController = GetOwner()->FindComponentByClass<UInputComponent>();
-	if (InputController)
-	{
-		UE_LOG(LogTemp, Error, TEXT("fond input controller for: %s"), *GetOwner()->GetName());
-	}
 	if (!PhysicsHandle)
 	{
 		UE_LOG(LogTemp, Error, TEXT("no physics handle component found attached to: %s"), *GetOwner()->GetName());
 	}
-	// ...
+}
+
+void UGrabber::SetupInputComponent()
+{
+	InputController = GetOwner()->FindComponentByClass<UInputComponent>();
+
 	InputController->BindAction
 	(
 		TEXT("Grab"),
@@ -48,12 +52,14 @@ void UGrabber::BeginPlay()
 		EInputEvent::IE_Released,
 		this,
 		&UGrabber::Release
-	);
+	);	
 }
 
 void UGrabber::Grab()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Grabbed!"));
+
+	GetFirstPhysicsBodyInReach();
 }
 
 void UGrabber::Release()
@@ -66,7 +72,10 @@ void UGrabber::Release()
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
+}
+
+FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
+{
 	FVector PlayerViewLocation;
 	FRotator PlayerViewRotation;
 
@@ -74,16 +83,7 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	// ...
 
 	FVector LineTraceEnd = PlayerViewLocation + PlayerViewRotation.Vector() * Reach;
-	DrawDebugLine(
-		GetWorld(),
-		PlayerViewLocation,
-		LineTraceEnd,
-		FColor::Red,
-		false,
-		0.f,
-		0,
-		5.f);
-	
+		
 	FHitResult Hit;
 	FCollisionQueryParams TraceParams(FName(TEXT("")), false, GetOwner());
 
@@ -95,11 +95,11 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 		TraceParams
 	);
 
-	AActor* HitActor = Hit.GetActor();
-
-	if (HitActor)
+	if (Hit.GetActor())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("collided with: %s"), *HitActor->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("hitted: %s"), *Hit.GetActor()->GetName());
 	}
+
+	return Hit;
 }
 
