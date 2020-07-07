@@ -20,35 +20,11 @@ void USlidingDoor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetOwner()->FindComponentByClass<UBoxComponent>()->OnComponentBeginOverlap.AddDynamic(this, &USlidingDoor::OnOverlapBegin);
-	GetOwner()->FindComponentByClass<UBoxComponent>()->OnComponentEndOverlap.AddDynamic(this, &USlidingDoor::onOverlapEnd);
-
-	if(!DoorPressurePlate)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s has the sliding door component, but no pressure plate found"), *GetOwner()->GetName());
-	}
-
-	FVector origin, boxExtent;
-
-	GetOwner()->GetActorBounds(false, origin, boxExtent, false);
-	
-	UE_LOG(LogTemp, Warning, TEXT("Origin are: %f, %f, %f"), origin.X, origin.Y, origin.Z);
-	UE_LOG(LogTemp, Warning, TEXT("boxExtent are: %f, %f, %f"), boxExtent.X, boxExtent.Y, boxExtent.Z);
-
-	if (bIsOpen) {
-		OpenLocation = origin;
-		CloseLocation = OpenLocation;
-		CloseLocation.Y = OpenLocation.Y + boxExtent.Y * 2;
-	} else {
-		CloseLocation = origin;
-		OpenLocation = CloseLocation;
-		OpenLocation.Y = CloseLocation.Y - boxExtent.Y * 2;
-	}
-
-	ActorThatOpen = GetWorld()->GetFirstPlayerController()->GetPawn();
-
+	FindDoorMeshComponent();
+	SetDoorInitialPosition();
+	BindCollisions();
 	FindAudioComponents();
-	// ...
+	ActorThatOpen = GetWorld()->GetFirstPlayerController()->GetPawn();
 }
 
 
@@ -56,38 +32,36 @@ void USlidingDoor::BeginPlay()
 void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	FVector Location = GetOwner()->GetActorLocation();
-	if (DoorPressurePlate && TotalMassOfActors() > MassToOpenDoor)
+	
+	FVector DoorLocation = DoorStaticMeshComponent->GetRelativeLocation();
+	if ((bIsUnlocked && bIsDoorOpening) || (DoorPressurePlate && TotalMassOfActors() > MassToOpenDoor))
 	{
-		if (Location.Y != OpenLocation.Y)
+		if (DoorLocation.Y != DoorOpenRelativePosition)
 		{
-			SlideDoor(DeltaTime, true);
+			SlideDoor(DeltaTime);
 		}
 
-		if (GetOwner()->GetActorLocation().Y == OpenLocation.Y)
+		if (GetOwner()->GetActorLocation().Y == DoorOpenRelativePosition)
 		{
 			DoorLastOpened = GetWorld()->GetTimeSeconds();
 		}
 	}
-	else if (Location.Y != CloseLocation.Y)
+	else if (bIsDoorClosing && DoorLocation.Y != DoorClosedRelativeLocation)
 	{
-		if (GetWorld()->GetTimeSeconds() - DoorLastOpened > DoorCloseDelay)
-		{
-			SlideDoor(DeltaTime, false);
-		}
+		SlideDoor(DeltaTime);
 	}
 	// ...
 }
 
-void USlidingDoor::SlideDoor(float& DeltaTime, bool bIsDoorOpening)
+void USlidingDoor::SlideDoor(float& DeltaTime)
 {
-	FVector Location = GetOwner()->GetActorLocation();
-	FVector TargetLocation = bIsDoorOpening ? OpenLocation : CloseLocation;
-	float InterpolatedY = FMath::FInterpConstantTo(Location.Y, TargetLocation.Y, DeltaTime,  DoorSlideSpeed);
+	FVector Location = DoorStaticMeshComponent->GetRelativeLocation();
+	float TargetRelativeLocation = bIsDoorOpening ? DoorOpenRelativePosition : DoorClosedRelativeLocation;
+	float InterpolatedY = FMath::FInterpConstantTo(Location.Y, TargetRelativeLocation, DeltaTime,  DoorSlideSpeed);
 	Location.Y = InterpolatedY;
-	GetOwner()->SetActorLocation(Location);
-	PlayAudio(bIsDoorOpening);
-	if (Location.Y == TargetLocation.Y)
+	DoorStaticMeshComponent->SetRelativeLocation(Location);
+	PlayAudio();
+	if (Location.Y == TargetRelativeLocation)
 	{
 		ResetAudio();
 	}
@@ -132,7 +106,7 @@ void USlidingDoor::FindAudioComponents()
 	}
 }
 
-void USlidingDoor::PlayAudio(bool bIsDoorOpening)
+void USlidingDoor::PlayAudio()
 {
 	const FString AudioComponentName = bIsDoorOpening ? TEXT("OpenDoorAudio") : TEXT("CloseDoorAudio");
 
@@ -168,15 +142,74 @@ void USlidingDoor::ResetAudio()
 void USlidingDoor::OnOverlapBegin(class UPrimitiveComponent* OverlapComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("overlapped!"));
-	if (AudioComponentsMap.Contains(TEXT("AccessDeniedAudio")) && !bAccessDeniedSound)
+
+	if (bIsUnlocked)
+	{
+		bIsDoorOpening = true;
+		bIsDoorClosing = false;
+	}
+	else if (AudioComponentsMap.Contains(TEXT("AccessDeniedAudio")) && !bAccessDeniedSound)
 	{
 		AudioComponentsMap[TEXT("AccessDeniedAudio")]->Play();
 		bAccessDeniedSound = true;
 	}
+
+	bPawnColliding = true;
 }
 
 void USlidingDoor::onOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
+{	
 	UE_LOG(LogTemp, Warning, TEXT("overlap ended!"));
+	
+	if (bIsUnlocked)
+	{
+		bIsDoorOpening = false;
+		bIsDoorClosing = true;
+	}
+
 	bAccessDeniedSound = false;
+	bPawnColliding = false;
+}
+
+void USlidingDoor::FindDoorMeshComponent()
+{
+	UStaticMeshComponent* StaticMeshComponent = GetOwner()->FindComponentByClass<UStaticMeshComponent>();
+	TArray<UStaticMeshComponent*> StaticMeshes;
+	GetOwner()->GetComponents(StaticMeshes);
+
+	for (auto StaticMesh : StaticMeshes)
+	{
+		if (StaticMesh->GetName().Equals(TEXT("Door")))
+		{
+			DoorStaticMeshComponent = StaticMesh;
+			break;
+		}
+	}
+
+	if (!DoorStaticMeshComponent)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s has no valid static mesh component Door"), *GetOwner()->GetName());
+	}
+
+}
+
+void USlidingDoor::BindCollisions()
+{
+	UBoxComponent* CollisionBoxComponent = GetOwner()->FindComponentByClass<UBoxComponent>();
+
+	if (!CollisionBoxComponent)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s has no valid Collision Box Component"), *GetOwner()->GetName());
+		return;
+	}
+
+	CollisionBoxComponent->OnComponentBeginOverlap.AddDynamic(this, &USlidingDoor::OnOverlapBegin);
+	CollisionBoxComponent->OnComponentEndOverlap.AddDynamic(this, &USlidingDoor::onOverlapEnd);
+}
+
+void USlidingDoor::SetDoorInitialPosition()
+{
+	FVector InitialPosition = DoorStaticMeshComponent->GetRelativeLocation();
+	InitialPosition.Y += DoorStartingPosition;
+	DoorStaticMeshComponent->SetRelativeLocation(InitialPosition);
 }
