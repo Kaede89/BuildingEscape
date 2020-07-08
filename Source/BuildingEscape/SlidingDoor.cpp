@@ -32,21 +32,20 @@ void USlidingDoor::BeginPlay()
 void USlidingDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
 	FVector DoorLocation = DoorStaticMeshComponent->GetRelativeLocation();
 	if ((bIsUnlocked && bIsDoorOpening) || (DoorPressurePlate && TotalMassOfActors() > MassToOpenDoor))
 	{
-		if (DoorLocation.Y != DoorOpenRelativePosition)
+		if (DoorLocation.Y < DoorOpenRelativePosition)
 		{
 			SlideDoor(DeltaTime);
 		}
 
-		if (GetOwner()->GetActorLocation().Y == DoorOpenRelativePosition)
+		if (DoorLocation.Y == DoorOpenRelativePosition)
 		{
 			DoorLastOpened = GetWorld()->GetTimeSeconds();
 		}
 	}
-	else if (bIsDoorClosing && DoorLocation.Y != DoorClosedRelativeLocation)
+	else if (bIsDoorClosing && DoorLocation.Y > DoorClosedRelativeLocation && !bPawnColliding)
 	{
 		SlideDoor(DeltaTime);
 	}
